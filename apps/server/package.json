@@ -9,6 +9,9 @@
   },
   "dependencies": {
     "@repo/typescript-config": "workspace:*",
+    "@upstash/redis": "^1.34.8",
+    "dotenv": "^16.5.0",
+    "ioredis": "^5.6.1",
     "socket.io": "^4.8.1"
   },
   "keywords": [],

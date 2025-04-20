@@ -1,5 +1,12 @@
+import { Redis } from "ioredis";
 import {Server} from "socket.io";
 
+const redisUrl = process.env.UPSTASH_REDIS_URL;
+if (!redisUrl) throw new Error("UPSTASH_REDIS_URL is not set");
+
+const pub = new Redis(redisUrl);
+const sub = new Redis(redisUrl);
+ 
 class SocketService {
     private _io: Server;
 
@@ -11,17 +18,25 @@ class SocketService {
                 origin: '*'
             }
         });
+        sub.subscribe('MESSAGES');
     }
 
     public initListeners(){
         const io = this.io;
         io.on("connect",(socket) =>{
-            console.log(`New Socket Connection`, socket.id);
-
+            console.log(`New Socket Connection`, socket.id); 
             socket.on("event:message", async ({message}: {message: string}) =>{
                 console.log("New Message Rec.", message);
-            })
-        });      
+                // publish the message to redis
+                await pub.publish('MESSAGES', JSON.stringify({ message }))
+            });
+        });   
+
+        sub.on('message', (channel , message ) => {
+            if(channel === "MESSAGES"){
+                io.emit("message", message);
+            }
+        })
     }
 
     get io(){
