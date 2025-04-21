@@ -1,0 +1,6 @@
+# Ignore generated code and JavaScript files
+**/*.js linguist-generated
+**/*.cjs linguist-generated
+**/*.mjs linguist-generated
+packages/db/generated/** linguist-generated
+public/** linguist-generated
