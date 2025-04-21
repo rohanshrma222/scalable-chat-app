@@ -1,6 +1,7 @@
+import prismaClient from "@repo/db/client";
 import { Redis } from "ioredis";
 import {Server} from "socket.io";
-import prisma from "./prisma";
+
 
 const redisUrl = process.env.UPSTASH_REDIS_URL;
 if (!redisUrl) throw new Error("UPSTASH_REDIS_URL is not set");
@@ -37,7 +38,7 @@ class SocketService {
             if(channel === "MESSAGES"){
                 console.log("new message from redis", message)
                 io.emit("message", message);
-                await prisma.message.create({
+                await prismaClient.messages.create({
                     data:{
                         text: message,
                     }
