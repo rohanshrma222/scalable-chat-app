@@ -1,7 +1,7 @@
 import prismaClient from "@repo/db/client";
 import { Redis } from "ioredis";
 import {Server} from "socket.io";
-
+import { produceMessage } from "./kafka";
 
 const redisUrl = process.env.UPSTASH_REDIS_URL;
 if (!redisUrl) throw new Error("UPSTASH_REDIS_URL is not set");
@@ -38,11 +38,13 @@ class SocketService {
             if(channel === "MESSAGES"){
                 console.log("new message from redis", message)
                 io.emit("message", message);
-                await prismaClient.messages.create({
-                    data:{
-                        text: message,
-                    }
-                })
+                 await produceMessage(message);
+                 console.log("Message Produced to KafKa Broker")
+                // await prismaClient.messages.create({
+                //     data:{
+                //         text: message,
+                //     }
+                // })
             }
         })
     }
