@@ -1,9 +1,10 @@
 import prismaClient from '@repo/db/client';
-import {Kafka, type Producer} from 'kafkajs'
+import { Kafka, Producer } from 'kafkajs';
+
 
 const kafka = new Kafka({
     clientId:'chat-app',
-    brokers: ['192.168.1.9:9092 ']
+    brokers: ['192.168.1.8:9092']
 });
 
 let producer: null | Producer = null;
@@ -19,7 +20,7 @@ export async function createProducer() {
 
 export async function produceMessage(message: string){
     const producer = await createProducer();
-    producer.send({
+    await producer.send({
         messages: [{key : `message-${Date.now()}`, value: message }],
         topic: "MESSAGES",
     });
@@ -28,7 +29,7 @@ export async function produceMessage(message: string){
 
 export async function startMessageConsumer(){
     console.log("Consumer is running")
-    const consumer = kafka.consumer({ groupId: "default"});
+    const consumer = kafka.consumer({ groupId: "chat-app-consumer-group"});
     await consumer.connect();
     await consumer.subscribe({ topic: "MESSAGES", fromBeginning: true });
 
@@ -36,7 +37,10 @@ export async function startMessageConsumer(){
         autoCommit: true,
         eachMessage: async ({message, pause}) => {
             console.log(`New Message Received..`)
-            if(!message.value) return
+            if(!message.value){
+                console.log('Received message with no value');
+                return
+            } 
             try {
                 await prismaClient.messages.create({
                     data:{
@@ -44,7 +48,7 @@ export async function startMessageConsumer(){
                     },
                 });
             } catch (err){
-                console.log('Something is wrong')
+                console.error('Database Error:', err);
                 pause()
                 setTimeout(() => {
                     consumer.resume([{topic: "MESSAGES" }])
